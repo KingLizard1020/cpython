@@ -1,0 +1,30 @@
+name: apply-dictobject-hunk
+on:
+  push:
+    branches: [apply-157217-bot]
+  workflow_dispatch:
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout patch branch
+        uses: actions/checkout@v4
+        with:
+          path: patchsrc
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-157217-fix
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: target
+      - name: Apply hunk and push
+        working-directory: target
+        run: |
+          git config user.name "Kailash Nelson"
+          git config user.email "37966146+KingLizard1020@users.noreply.github.com"
+          git apply ../patchsrc/dictobject-only.patch
+          git add Objects/dictobject.c
+          git commit -m "gh-157217: Unwrap mappingproxy in dict_merge"
+          git push origin gh-157217-fix
