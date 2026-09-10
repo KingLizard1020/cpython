@@ -24,6 +24,9 @@ extern PyTypeObject _PyMethodWrapper_Type;
 
 extern void *_PyMember_GetOffset(PyObject *, PyMemberDef *);
 
+/* Return a borrowed reference to the mapping wrapped by a mappingproxy. */
+extern PyObject *_PyDictProxy_GetMapping(PyObject *op);
+
 #ifdef __cplusplus
 }
 #endif
