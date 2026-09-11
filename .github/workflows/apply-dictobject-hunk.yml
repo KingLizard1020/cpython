@@ -26,5 +26,5 @@ jobs:
           git config user.email "37966146+KingLizard1020@users.noreply.github.com"
           git apply ../patchsrc/dictobject-only.patch
           git add Objects/dictobject.c
-          git commit -m "gh-157217: Unwrap mappingproxy in dict_merge"
+          git commit -m "gh-157217: Unwrap mappingproxy locally in dict_merge"
           git push origin gh-157217-fix
