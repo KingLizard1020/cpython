@@ -84,6 +84,11 @@ class ThreadRunningTests(BasicThreadTest):
             # size must be positive
             thread.stack_size(-4096)
 
+        if support.check_sanitizer(address=True):
+            # gh-141044: 127 KiB used to be accepted but leaked under ASan
+            with self.assertRaises(ValueError):
+                thread.stack_size(127 * 1024)
+
     @unittest.skipIf(os.name not in ("nt", "posix"), 'test meant for nt and posix')
     def test_nt_and_posix_stack_size(self):
         try:
