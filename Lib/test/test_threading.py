@@ -323,16 +323,49 @@ class ThreadTests(BaseTestCase):
             threading.stack_size(0)
             """)
 
-        # Smallest accepted size, unjoined (interpreter shutdown joins).
+        # Smallest accepted size, unjoined.  Wait until the worker finishes
+        # without join(); process shutdown also joins.  LSan plus (on debug
+        # builds) gettotalrefcount() must stay clean at this new minimum.
         run_script(min_stack_helper + """
+            import gc
+            import sys
+            import time
+
             def worker():
                 pass
             size = min_stack_size()
             if size is None:
                 raise SystemExit(0)
-            t = threading.Thread(target=worker, name="min-stack-worker")
-            t.start()
-            threading.stack_size(0)
+
+            def wait_unjoined(threads, timeout=30):
+                deadline = time.monotonic() + timeout
+                for t in threads:
+                    while t.is_alive():
+                        if time.monotonic() > deadline:
+                            raise SystemExit("unjoined worker did not finish")
+                        time.sleep(0.001)
+
+            if hasattr(sys, "gettotalrefcount"):
+                gc.collect()
+                gc.collect()
+                start = sys.gettotalrefcount()
+                threads = []
+                for _ in range(8):
+                    t = threading.Thread(target=worker)
+                    t.start()
+                    threads.append(t)
+                wait_unjoined(threads)
+                del threads
+                threading.stack_size(0)
+                gc.collect()
+                gc.collect()
+                delta = sys.gettotalrefcount() - start
+                if delta > 50:
+                    raise SystemExit(f"refcount leak: {delta}")
+            else:
+                t = threading.Thread(target=worker, name="min-stack-worker")
+                t.start()
+                threading.stack_size(0)
             """)
 
         # Joined threads at the minimum must not leak references.
